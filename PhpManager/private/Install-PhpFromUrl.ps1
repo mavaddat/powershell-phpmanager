@@ -55,7 +55,7 @@
                     $exeOutput = $_.Exception.Message
                 }
                 $exeExitCode = $LASTEXITCODE
-                if ($exeExitCode -eq $Script:STATUS_DLL_NOT_FOUND -or $exeExitCode -eq $Script:ENTRYPOINT_NOT_FOUND -or $exeOutput -match 'vcruntime.*is not compatible with this PHP build') {
+                if ($exeExitCode -eq $Script:STATUS_DLL_NOT_FOUND -or $exeExitCode -eq $Script:ENTRYPOINT_NOT_FOUND  -or $exeExitCode -eq $Script:STATUS_INVALID_IMAGE_FORMAT -or $exeOutput -match 'vcruntime.*is not compatible with this PHP build') {
                     switch ($PhpVersion.VCVersion) {
                         6 { $redistName = '6' } # PHP 5.2, PHP 5.3
                         7 { $redistName = '2002' }
@@ -67,7 +67,8 @@
                         12 { $redistName = '2013' }
                         14 { $redistName = '2015' } # PHP 7.0, PHP 7.1
                         15 { $redistName = '2017' } # PHP 7.2, PHP 7.3
-                        16 { $redistName = '2019' } # PHP 7.4
+                        16 { $redistName = '2019' } # PHP 7.4, PHP 8.0, PHP 8.1, PHP 8.2, PHP 8.3
+                        17 { $redistName = '2022' } # PHP 8.4
                         default {
                             throw ('The Visual C++ ' + $PhpVersion.VCVersion + ' Redistributable seems to be missing: you have to install it manually (we can''t recognize its version)')
                         }

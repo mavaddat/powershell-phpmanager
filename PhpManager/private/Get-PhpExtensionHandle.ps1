@@ -33,6 +33,7 @@
             'advanced php debugger (apd)' { $handle = 'apd' }
             'nt user api' { $handle = 'ntuser' }
             'the ioncube php loader' { $handle = 'ioncube_loader' }
+            'pc/sc' { $handle = 'pcsc' }
             default {
                 $replaced = $handle -replace '\s+', '_'
                 if (-Not($replaced -match '^[a-z0-9][a-z0-9_\-]+$')) {

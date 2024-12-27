@@ -36,7 +36,7 @@
         [string] $Extension,
         [Parameter(Mandatory = $false, Position = 1, HelpMessage = 'Specify the version of the extension (it can be for example ''2.6.0'', ''2.6'', ''2'')')]
         [ValidateNotNull()]
-        [ValidatePattern('^\d+(\.\d+){0,2}$')]
+        [ValidatePattern('^\d+(\.\d+){0,3}$')]
         [string] $Version,
         [Parameter(Mandatory = $false, Position = 2, HelpMessage = 'The minimum stability flag of the package: one of ''stable'' (default), ''beta'', ''alpha'', ''devel'' or ''snapshot'')')]
         [ValidateNotNull()]
@@ -81,6 +81,8 @@
             $Version = ''
         }
         $tempFolder = $null
+        $finalDllName = $null
+        $additionalFiles = @()
         try {
             if (Test-Path -Path $Extension -PathType Leaf) {
                 if ($Version -ne '') {
@@ -93,6 +95,8 @@
                     throw 'You can''t specify the -MaximumStability argument if you specify an existing file with the -Extension argument'
                 }
                 $dllPath = [System.IO.Path]::GetFullPath($Extension)
+                $newExtension = Get-PhpExtensionDetail -PhpVersion $phpVersion -Path $dllPath
+                $moveDll = $false
             }
             else {
                 if ($null -eq $MinimumStability -or $MinimumStability -eq '') {
@@ -119,13 +123,10 @@
                         if ($null -ne $availablePackageVersion) {
                             $remoteFileIsZip = $false
                             $finalDllName = 'php_xdebug.dll'
-                        } else {
-                            $finalDllName = $null
                         }
                     }
                     default {
                         $availablePackageVersion = $null
-                        $finalDllName = $null
                     }
                 }
                 if ($null -eq $availablePackageVersion) {
@@ -153,7 +154,6 @@
                 }
                 Write-Verbose ("Downloading PECL package {0} {1} from {2}" -f $peclPackageHandle, $availablePackageVersion.PackageVersion, $availablePackageVersion.PackageArchiveUrl)
                 $downloadedFile, $keepDownloadedFile = Get-FileFromUrlOrCache -Url $availablePackageVersion.PackageArchiveUrl
-                $additionalFiles = @()
                 try {
                     if ($remoteFileIsZip) {
                         $tempFolder = New-TempDirectory
@@ -187,6 +187,16 @@
                                 $additionalFiles += @(Get-ChildItem -Path $tempFolder\IM_*.dll -File -Depth 1)
                                 $additionalFiles += @(Get-ChildItem -Path $tempFolder\FILTER_*.dll -File -Depth 1)
                             }
+                            'memcached' {
+                                $libmemcachedDll = Join-Path -Path $tempFolder -ChildPath 'libmemcached.dll'
+                                $libhashkitDll = Join-Path -Path $tempFolder -ChildPath 'libhashkit.dll'
+                                if (Test-Path -LiteralPath $libmemcachedDll -PathType Leaf) {
+                                    $additionalFiles += $libmemcachedDll
+                                }
+                                if (Test-Path -LiteralPath $libhashkitDll -PathType Leaf) {
+                                    $additionalFiles += $libhashkitDll
+                                }
+                            }
                             'yaml' {
                                 $yamlDll = Join-Path -Path $tempFolder -ChildPath 'yaml.dll'
                                 if (Test-Path -LiteralPath $yamlDll -PathType Leaf) {
@@ -200,6 +210,7 @@
                         $dllPath = $downloadedFile
                     }
                     $newExtension = Get-PhpExtensionDetail -PhpVersion $phpVersion -Path $dllPath
+                    $moveDll = $true
                 }
                 catch {
                     $keepDownloadedFile = $false
@@ -225,7 +236,11 @@
                 if (-Not(Test-IsFileWritable($oldExtension.Filename))) {
                     throw "Unable to write to the file $($oldExtension.Filename)"
                 }
-                Move-Item -Path $dllPath -Destination $oldExtension.Filename -Force
+                if ($moveDll) {
+                    Move-Item -Path $dllPath -Destination $oldExtension.Filename -Force
+                } else {
+                    Copy-Item -Path $dllPath -Destination $oldExtension.Filename -Force
+                }
                 try {
                     Reset-Acl -Path $oldExtension.Filename
                 } catch {
@@ -254,8 +269,13 @@
                 } else {
                     $newExtensionFilename = [System.IO.Path]::Combine($phpVersion.ExtensionsPath, [System.IO.Path]::GetFileName($finalDllName))
                 }
-                Write-Verbose "Moving ""$dllPath"" to ""$newExtensionFilename"""
-                Move-Item -Path $dllPath -Destination $newExtensionFilename
+                if ($moveDll) {
+                    Write-Verbose "Moving ""$dllPath"" to ""$newExtensionFilename"""
+                    Move-Item -Path $dllPath -Destination $newExtensionFilename
+                } else {
+                    Write-Verbose "Copying ""$dllPath"" to ""$newExtensionFilename"""
+                    Copy-Item -Path $dllPath -Destination $newExtensionFilename
+                }
                 try {
                     Reset-Acl -Path $newExtensionFilename
                 } catch {

@@ -20,6 +20,7 @@
     [System.Array]
     #>
     [OutputType([string], [bool])]
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingBrokenHashAlgorithms','')]
     param (
         [Parameter(Mandatory = $true, Position = 0)]
         [ValidateNotNull()]
@@ -86,9 +87,8 @@
         } else {
             $temporaryFile = Get-TemporaryFileWithExtension -Extension $extension
             try {
-                Set-NetSecurityProtocolType
                 Write-Verbose "Downloading from $Url"
-                Invoke-WebRequest -UseBasicParsing -Uri $Url -OutFile $temporaryFile
+                Get-WebResource -Uri $Url -OutFile $temporaryFile
                 if ($fullCachePath -ne '') {
                     Move-Item -LiteralPath $temporaryFile -Destination $fullCachePath
                     $localFile = $fullCachePath

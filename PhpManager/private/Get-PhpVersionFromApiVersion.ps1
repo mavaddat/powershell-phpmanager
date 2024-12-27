@@ -16,22 +16,38 @@ function Get-PhpVersionFromApiVersion {
         return ''
     }
     switch ($ApiVersion) {
+        # https://github.com/php/php-src/blob/php-8.4.0RC1/Zend/zend_modules.h#L34
+        # https://github.com/php/php-src/blob/php-8.4.2/Zend/zend_modules.h#L34
+        20240924 {
+            return '8.4'
+        }
+        # https://github.com/php/php-src/blob/php-8.3.0RC1/Zend/zend_modules.h#L34
+        # https://github.com/php/php-src/blob/php-8.3.10/Zend/zend_modules.h#L34
+        20230831 {
+            return '8.3'
+        }
+        # https://github.com/php/php-src/blob/php-8.2.0RC1/Zend/zend_modules.h#L34
+        # https://github.com/php/php-src/blob/php-8.2.22/Zend/zend_modules.h#L34
+        20220829 {
+            return '8.2'
+        }
         # https://github.com/php/php-src/blob/php-8.1.0RC1/Zend/zend_modules.h#L34
+        # https://github.com/php/php-src/blob/php-8.1.29/Zend/zend_modules.h#L34
         20210902 {
             return '8.1'
         }
         # https://github.com/php/php-src/blob/php-8.0.0rc1/Zend/zend_modules.h#L34
-        # https://github.com/php/php-src/blob/php-8.0.10/Zend/zend_modules.h#L34
+        # https://github.com/php/php-src/blob/php-8.0.30/Zend/zend_modules.h#L34
         20200930 {
             return '8.0'
         }
         # https://github.com/php/php-src/blob/php-7.4.0RC1/Zend/zend_modules.h#L34
-        # https://github.com/php/php-src/blob/php-7.4.23/Zend/zend_modules.h#L34
+        # https://github.com/php/php-src/blob/php-7.4.33/Zend/zend_modules.h#L34
         20190902 {
             return '7.4'
         }
         # https://github.com/php/php-src/blob/php-7.3.0beta1/Zend/zend_modules.h#L34
-        # https://github.com/php/php-src/blob/php-7.3.30/Zend/zend_modules.h#L34
+        # https://github.com/php/php-src/blob/php-7.3.33/Zend/zend_modules.h#L34
         20180731 {
             return '7.3'
         }
@@ -94,7 +110,7 @@ function Get-PhpVersionFromApiVersion {
     $masterApiVersion = Get-Variable -Name 'MASTER_APIVERSION' -ValueOnly -Scope Script
     if ($null -eq $masterApiVersion) {
         try {
-            $match = Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/php/php-src/master/Zend/zend_modules.h' | Select-String -Pattern '(?m)^\s*#define\s+ZEND_MODULE_API_NO\s+(\d+)\s*$' -CaseSensitive
+            $match = Get-WebResource -Uri 'https://raw.githubusercontent.com/php/php-src/master/Zend/zend_modules.h' | Select-String -Pattern '(?m)^\s*#define\s+ZEND_MODULE_API_NO\s+(\d+)\s*$' -CaseSensitive
             if ($null -eq $match) {
                 $masterApiVersion = $false
             }
@@ -111,7 +127,7 @@ function Get-PhpVersionFromApiVersion {
         $masterPhpVersion = Get-Variable -Name 'MASTER_PHPVERSION' -ValueOnly -Scope Script
         if ($null -eq $masterPhpVersion) {
             try {
-                $match = Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/php/php-src/master/main/php_version.h' | Select-String -Pattern '(?m)^\s*#define\s+PHP_VERSION\s+"(\d+(\.\d+)+[^"]*)"\s*$' -CaseSensitive
+                $match = Get-WebResource -Uri 'https://raw.githubusercontent.com/php/php-src/master/main/php_version.h' | Select-String -Pattern '(?m)^\s*#define\s+PHP_VERSION\s+"(\d+(\.\d+)+[^"]*)"\s*$' -CaseSensitive
                 if ($null -eq $match) {
                     $masterPhpVersion = $false
                 }
