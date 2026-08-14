@@ -16,7 +16,8 @@ function Get-PhpVersionFromApiVersion {
         return ''
     }
     switch ($ApiVersion) {
-        # https://github.com/php/php-src/blob/a7223e73a8ef0c95588a76830566f035f5fb75bf/Zend/zend_modules.h#L33 (8.6.0-dev)
+        # https://github.com/php/php-src/blob/php-8.6.0alpha1/Zend/zend_modules.h#L33
+        # https://github.com/php/php-src/blob/php-8.6.0beta1/Zend/zend_modules.h#L33
         20250926 {
             return '8.6'
         }
